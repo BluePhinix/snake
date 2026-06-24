@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Neo's snake Game </title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green:      #00FF41;
+  --green-dim:  #00CC33;
+  --green-dark: #004D15;
+  --green-bg:   #010E01;
+  --neo-blue:   #D6EFFF;
+  --neo-blue2:  #B8DFFF;
+  --red:        #FF3333;
+  --red-dim:    #CC1111;
+  --red-dark:   #3A0000;
+  --orange:     #FF6600;
+  --gold:       #FFD700;
+  --black:      #000000;
+  --enemy1:     #FF3333;
+  --enemy2:     #FF6600;
+}
+
+html, body {
+  height: 100%;
+  background: #000000;
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  padding: 8px 8px 4px;
+}
+
+#neo-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.8rem, 6vw, 3.6rem);
+  color: var(--neo-blue);
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 20px rgba(180,220,255,0.7), 0 0 50px rgba(180,220,255,0.3);
+  line-height: 1;
+  margin-bottom: 1px;
+  flex-shrink: 0;
+}
+
+#subtitle {
+  font-size: clamp(0.55rem, 1.6vw, 0.8rem);
+  color: #3A6A8A;
+  letter-spacing: 0.3em;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+#mode-select {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.mode-card {
+  border: 2px solid;
+  border-radius: 6px;
+  padding: clamp(10px, 2.5vh, 18px) clamp(12px, 3vw, 24px);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+}
+
+.mode-card:hover, .mode-card:focus {
+  transform: scale(1.01);
+  outline: none;
+}
+
+.mode-card.vs-snake {
+  border-color: var(--red);
+  background: rgba(255,51,51,0.05);
+}
+
+.mode-card.vs-snake:hover {
+  background: rgba(255,51,51,0.12);
+}
+
+.mode-card.classic {
+  border-color: var(--green);
+  background: rgba(0,255,65,0.04);
+}
+
+.mode-card.classic:hover {
+  background: rgba(0,255,65,0.10);
+}
+
+.mode-tag {
+  font-size: clamp(0.55rem, 1.4vw, 0.68rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.vs-snake .mode-tag { color: var(--red-dim); }
+.classic .mode-tag  { color: var(--green-dark); }
+
+.mode-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.1rem, 3.5vw, 2rem);
+  line-height: 1;
+}
+
+.vs-snake .mode-title { color: var(--red); text-shadow: 0 0 14px rgba(255,51,51,0.5); }
+.classic .mode-title  { color: var(--green); text-shadow: 0 0 14px rgba(0,255,65,0.4); }
+
+.mode-desc {
+  font-size: clamp(0.6rem, 1.6vw, 0.78rem);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+
+.vs-snake .mode-desc { color: #884444; }
+.classic .mode-desc  { color: #336633; }
+
+.mode-desc b { color: var(--gold); font-weight: normal; }
+
+#footer {
+  font-size: clamp(0.45rem, 1.2vw, 0.58rem);
+  color: #222;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 4px 0 2px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+#game-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+#hud {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.hud-item {
+  font-size: clamp(0.65rem, 2vw, 0.9rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.hud-label {
+  font-size: clamp(0.45rem, 1.2vw, 0.58rem);
+  letter-spacing: 0.2em;
+  color: #336633;
+}
+
+.hud-val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+  color: var(--neo-blue);
+}
+
+.hud-val.red-val { color: var(--red); }
+.hud-val.gold-val { color: var(--gold); }
+
+#back-btn {
+  background: none;
+  border: 1px solid #222;
+  color: #444;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.5rem, 1.3vw, 0.65rem);
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+}
+
+#back-btn:hover { border-color: #555; color: #888; }
+
+#game-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+canvas { display: block; }
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.88);
+  gap: 10px;
+  pointer-events: none;
+}
+
+#overlay.hidden { display: none; }
+
+.ov-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.6rem, 5.5vw, 3rem);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.ov-title.green { color: var(--green); text-shadow: 0 0 20px var(--green); }
+.ov-title.red   { color: var(--red);   text-shadow: 0 0 20px var(--red); }
+.ov-title.gold  { color: var(--gold);  text-shadow: 0 0 30px var(--gold), 0 0 60px rgba(255,215,0,0.4); }
+.ov-title.blue  { color: var(--neo-blue); text-shadow: 0 0 30px var(--neo-blue2); }
+
+.ov-body {
+  font-size: clamp(0.7rem, 2vw, 0.95rem);
+  color: #336633;
+  text-align: center;
+  line-height: 1.75;
+}
+
+.ov-body .gold  { color: var(--gold); }
+.ov-body .red   { color: var(--red); }
+.ov-body .blue  { color: var(--neo-blue); }
+.ov-body .green { color: var(--green); }
+
+.ov-score {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  color: var(--gold);
+  text-align: center;
+}
+
+.ov-btn {
+  margin-top: 4px;
+  padding: 9px 28px;
+  border: 2px solid var(--green);
+  border-radius: 3px;
+  background: rgba(0,255,65,0.08);
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  cursor: pointer;
+  pointer-events: all;
+  letter-spacing: 0.12em;
+  transition: background 0.15s;
+}
+
+.ov-btn:hover { background: rgba(0,255,65,0.22); color: #fff; outline: none; }
+
+.ov-btn.red-btn {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(255,51,51,0.08);
+}
+
+.ov-btn.red-btn:hover { background: rgba(255,51,51,0.22); color: #fff; }
+
+.ov-btn.gold-btn {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(255,215,0,0.08);
+}
+
+.ov-btn.gold-btn:hover { background: rgba(255,215,0,0.22); color: #fff; }
+
+#instruct-bar {
+  font-size: clamp(0.5rem, 1.4vw, 0.65rem);
+  color: #1A3A1A;
+  letter-spacing: 0.12em;
+  padding: 2px 0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+#dpad {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 2px;
+  flex-shrink: 0;
+}
+
+.dpad-row { display: flex; gap: 2px; }
+
+.dpad-btn {
+  width: clamp(36px, 9vw, 50px);
+  height: clamp(36px, 9vw, 50px);
+  background: rgba(0,255,65,0.06);
+  border: 1px solid #003A10;
+  border-radius: 4px;
+  color: #336633;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  transition: background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dpad-btn:active { background: rgba(0,255,65,0.2); color: var(--green); }
+.dpad-spacer { width: clamp(36px, 9vw, 50px); height: clamp(36px, 9vw, 50px); }
+
+@media (max-width: 600px), (pointer: coarse) {
+  #dpad { display: flex; }
+  #instruct-bar { display: none; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.97); }
+}
+@keyframes rainbow-shift {
+  0%   { color: #FFD700; }
+  16%  { color: #00FF41; }
+  33%  { color: #FF3333; }
+  50%  { color: #00FFFF; }
+  66%  { color: #FF88FF; }
+  83%  { color: #FFAA00; }
+  100% { color: #FFD700; }
+}
+
+.pulse      { animation: pulse-gold 1.2s ease-in-out infinite; }
+.pulse-red  { animation: pulse-red 0.9s ease-in-out infinite; }
+.rainbow    { animation: rainbow-shift 1.5s linear infinite; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="neo-title">✧NEO✧</div>
+  <div id="subtitle">●Snake Game●</div>
+<div id="subtitle">Yt:Dev-fantasy,</div>
+<div id="subtitle">Neophixmc</div>
+  <div id="mode-select">
+    <div class="mode-card vs-snake" id="card-vs" tabindex="0" role="button">
+      <div class="mode-tag">MODE 01</div>
+      <div class="mode-title">Hunted By SNAKEs</div>
+      <div class="mode-desc">
+        Two massive enemy snakes hunt you .<br>
+        Body hit: <b>−10 pts</b> (or <b>−10%</b> if score &gt; 100) · Head hit: <b>instant death</b><br>
+        Go negative → <b>Died of hunger XD!</b> · Eat food to survive &amp; score.
+      </div>
+    </div>
+
+    <div class="mode-card classic" id="card-classic" tabindex="0" role="button">
+      <div class="mode-tag">MODE 02</div>
+      <div class="mode-title">CLASSIC SNAKE</div>
+      <div class="mode-desc">
+        The  original. Eat, grow, survive.<br>
+        <b>333 pts</b> → NEO!! · <b>3333 pts</b> → DOUBLE NEO!! (legendary)
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">© NeoPhinixMC 2026 &nbsp;·&nbsp; Neo's Snake Game &nbsp;·&nbsp; All Rights Reserved</div>
+
+  <div id="game-screen">
+    <div id="hud">
+      <div class="hud-item">
+        <div class="hud-label">SCORE</div>
+        <div class="hud-val" id="hud-score">0</div>
+      </div>
+      <button id="back-btn">◀ MENU</button>
+      <div class="hud-item">
+        <div class="hud-label">BEST</div>
+        <div class="hud-val gold-val" id="hud-best">0</div>
+      </div>
+    </div>
+
+    <div id="game-wrap">
+      <canvas id="canvas"></canvas>
+      <div id="overlay" class="hidden"></div>
+    </div>
+
+    <div id="instruct-bar"></div>
+
+    <div id="dpad">
+      <div class="dpad-row">
+        <div class="dpad-spacer"></div>
+        <button class="dpad-btn" id="btn-up">▲</button>
+        <div class="dpad-spacer"></div>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" id="btn-left">◀</button>
+        <div class="dpad-spacer"></div>
+        <button class="dpad-btn" id="btn-right">▶</button>
+      </div>
+      <div class="dpad-row">
+        <div class="dpad-spacer"></div>
+        <button class="dpad-btn" id="btn-down">▼</button>
+        <div class="dpad-spacer"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const appEl       = document.getElementById('app');
+const modeSelect  = document.getElementById('mode-select');
+const gameScreen  = document.getElementById('game-screen');
+const canvas      = document.getElementById('canvas');
+const ctx         = canvas.getContext('2d');
+const overlay     = document.getElementById('overlay');
+const hudScore    = document.getElementById('hud-score');
+const hudBest     = document.getElementById('hud-best');
+const instructBar = document.getElementById('instruct-bar');
+const backBtn     = document.getElementById('back-btn');
+const footer      = document.getElementById('footer');
+
+const DIR = { UP:0, RIGHT:1, DOWN:2, LEFT:3 };
+const DX  = [0, 1, 0, -1];
+const DY  = [-1, 0, 1, 0];
+const COLS = 24;
+const ROWS = 20;
+
+let cellSize, currentMode, gameState, loopTimer;
+let score, highScoreClassic, highScoreVs, neoWinShown;
+let playerSnake, playerDir, playerNextDir;
+let foods;
+let enemies;
+let touchStartX, touchStartY;
+
+highScoreClassic = 0;
+highScoreVs = 0;
+
+const CLASSIC_TICK_START = 175;
+const CLASSIC_TICK_MIN   = 60;
+const VS_TICK            = 200;
+const VS_ENEMY_TICK      = 260;
+
+let classicTickMs = CLASSIC_TICK_START;
+let vsEnemyTimer  = null;
+
+function resizeCanvas() {
+  const wrap = document.getElementById('game-wrap');
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  cellSize = Math.floor(Math.min(w / COLS, h / ROWS));
+  cellSize = Math.max(cellSize, 10);
+  canvas.width  = COLS * cellSize;
+  canvas.height = ROWS * cellSize;
+}
+
+function showMenu() {
+  gameState = 'menu';
+  clearTimers();
+  gameScreen.style.display = 'none';
+  modeSelect.style.display = 'flex';
+  footer.style.display = 'block';
+  appEl.style.justifyContent = 'flex-start';
+}
+
+function launchMode(mode) {
+  currentMode = mode;
+  modeSelect.style.display = 'none';
+  footer.style.display = 'none';
+  gameScreen.style.display = 'flex';
+  gameScreen.style.flexDirection = 'column';
+  gameScreen.style.alignItems = 'center';
+  gameScreen.style.width = '100%';
+  gameScreen.style.flex = '1';
+
+  if (mode === 'classic') {
+    instructBar.textContent = 'ARROWS / WASD · SWIPE · SPACE to pause';
+    document.getElementById('hud-score').className = 'hud-val';
+  } else {
+    instructBar.textContent = 'ARROWS / WASD · SWIPE · Avoid the red giants!';
+    document.getElementById('hud-score').className = 'hud-val red-val';
+  }
+
+  resizeCanvas();
+  startGame();
+}
+
+function startGame() {
+  clearTimers();
+  score = 0;
+  neoWinShown = false;
+  updateHUD();
+  overlay.className = 'hidden';
+  overlay.innerHTML = '';
+
+  const midY = Math.floor(ROWS / 2);
+
+  playerSnake = [
+    {x: 6, y: midY},
+    {x: 5, y: midY},
+    {x: 4, y: midY},
+    {x: 3, y: midY},
+    {x: 2, y: midY},
+  ];
+
+  playerDir     = DIR.RIGHT;
+  playerNextDir = DIR.RIGHT;
+
+  if (currentMode === 'vs') {
+    const e1len = 14;
+    const e2len = 16;
+
+    enemies = [
+      {
+        body: buildEnemyBody(COLS - 2, 3, DIR.LEFT, e1len),
+        dir: DIR.LEFT,
+        color: '#FF3333',
+        fat: 1.0,
+        id: 0
+      },
+      {
+        body: buildEnemyBody(COLS - 2, ROWS - 4, DIR.LEFT, e2len),
+        dir: DIR.LEFT,
+        color: '#FF6600',
+        fat: 1.15,
+        id: 1
+      }
+    ];
+
+    foods = [];
+    for (let i = 0; i < 4; i++) spawnFood();
+
+    gameState = 'running';
+    loopTimer    = setInterval(vsPlayerTick, VS_TICK);
+    vsEnemyTimer = setInterval(vsEnemyTick, VS_ENEMY_TICK);
+  } else {
+    classicTickMs = CLASSIC_TICK_START;
+    foods = [];
+    spawnFood();
+    gameState = 'running';
+    loopTimer = setInterval(classicTick, classicTickMs);
+  }
+
+  draw();
+}
+
+function buildEnemyBody(headX, headY, dir, length) {
+  const body = [];
+  for (let i = 0; i < length; i++) {
+    body.push({ x: headX - DX[dir] * i, y: headY - DY[dir] * i });
+  }
+  return body;
+}
+
+function clearTimers() {
+  clearInterval(loopTimer);
+  clearInterval(vsEnemyTimer);
+  loopTimer = null;
+  vsEnemyTimer = null;
+}
+
+function updateHUD() {
+  hudScore.textContent = score;
+  const best = currentMode === 'classic' ? highScoreClassic : highScoreVs;
+  hudBest.textContent = best;
+}
+
+function spawnFood() {
+  let fx, fy, tries = 0;
+  do {
+    fx = Math.floor(Math.random() * COLS);
+    fy = Math.floor(Math.random() * ROWS);
+    tries++;
+  } while (tries < 200 && (
+    playerSnake.some(s => s.x === fx && s.y === fy) ||
+    foods.some(f => f.x === fx && f.y === fy) ||
+    (enemies && enemies.some(e => e.body.some(s => s.x === fx && s.y === fy)))
+  ));
+  foods.push({x: fx, y: fy});
+}
+
+function setPlayerDir(d) {
+  if (gameState !== 'running') return;
+  if ((playerDir === DIR.UP && d === DIR.DOWN) || (playerDir === DIR.DOWN && d === DIR.UP)) return;
+  if ((playerDir === DIR.LEFT && d === DIR.RIGHT) || (playerDir === DIR.RIGHT && d === DIR.LEFT)) return;
+  playerNextDir = d;
+}
+
+function classicTick() {
+  playerDir = playerNextDir;
+  const head = playerSnake[0];
+  const nx = head.x + DX[playerDir];
+  const ny = head.y + DY[playerDir];
+
+  if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) { classicDie('wall'); return; }
+  if (playerSnake.slice(0, -1).some(s => s.x === nx && s.y === ny)) { classicDie('self'); return; }
+
+  playerSnake.unshift({x: nx, y: ny});
+
+  const fi = foods.findIndex(f => f.x === nx && f.y === ny);
+  if (fi !== -1) {
+    foods.splice(fi, 1);
+    score++;
+    if (score > highScoreClassic) highScoreClassic = score;
+    updateHUD();
+    spawnFood();
+    adjustClassicSpeed();
+
+    if (score >= 3333 && !neoWinShown) {
+      neoWinShown = true;
+      clearTimers();
+      gameState = 'doublewin';
+      draw();
+      showDoubleWin();
+      return;
+    }
+    if (score >= 333 && !neoWinShown) {
+      neoWinShown = true;
+      clearTimers();
+      gameState = 'neowin';
+      draw();
+      showNeoWin();
+      return;
+    }
+  } else {
+    playerSnake.pop();
+  }
+
+  draw();
+}
+
+function adjustClassicSpeed() {
+  clearInterval(loopTimer);
+  classicTickMs = Math.max(CLASSIC_TICK_MIN, CLASSIC_TICK_START - Math.floor(score / 10) * 10);
+  loopTimer = setInterval(classicTick, classicTickMs);
+}
+
+function classicDie() {
+  clearTimers();
+  gameState = 'dead';
+  draw();
+  showClassicGameOver();
+}
+
+function vsPlayerTick() {
+  playerDir = playerNextDir;
+  const head = playerSnake[0];
+  const nx = head.x + DX[playerDir];
+  const ny = head.y + DY[playerDir];
+
+  if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) {
+    vsKill('wall');
+    return;
+  }
+
+  if (playerSnake.slice(0, -1).some(s => s.x === nx && s.y === ny)) {
+    vsKill('self');
+    return;
+  }
+
+  for (const e of enemies) {
+    if (e.body[0].x === nx && e.body[0].y === ny) {
+      vsKill('head');
+      return;
+    }
+    if (e.body.slice(1).some(s => s.x === nx && s.y === ny)) {
+      vsKill('head');
+      return;
+    }
+  }
+
+  playerSnake.unshift({x: nx, y: ny});
+  playerSnake.pop();
+
+  const fi = foods.findIndex(f => f.x === nx && f.y === ny);
+  if (fi !== -1) {
+    foods.splice(fi, 1);
+    score++;
+    if (score > highScoreVs) highScoreVs = score;
+    updateHUD();
+    spawnFood();
+  }
+
+  draw();
+}
+
+function vsEnemyTick() {
+  for (const e of enemies) {
+    const head = e.body[0];
+    const d = enemyChooseDir(e);
+    e.dir = d;
+    const nx = head.x + DX[d];
+    const ny = head.y + DY[d];
+
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+
+    e.body.unshift({x: nx, y: ny});
+    e.body.pop();
+
+    if (playerSnake[0].x === nx && playerSnake[0].y === ny) {
+      vsKill('head');
+      return;
+    }
+
+    if (playerSnake.some(s => s.x === nx && s.y === ny)) {
+      applyBodyPenalty();
+      if (score < 0) { vsKill('hunger'); return; }
+    }
+  }
+
+  draw();
+}
+
+function applyBodyPenalty() {
+  if (score > 100) {
+    score = Math.floor(score * 0.90);
+  } else {
+    score -= 10;
+  }
+  if (score > highScoreVs) highScoreVs = score;
+  updateHUD();
+
+  hudScore.style.animation = 'none';
+  hudScore.offsetHeight;
+  hudScore.style.animation = 'pulse-red 0.4s ease';
+}
+
+function vsKill(reason) {
+  clearTimers();
+  gameState = 'dead';
+  draw();
+  showVsGameOver(reason);
+}
+
+function enemyChooseDir(enemy) {
+  const head  = enemy.body[0];
+  const target = playerSnake[0];
+
+  const dirs = [DIR.UP, DIR.RIGHT, DIR.DOWN, DIR.LEFT];
+  const opposite = (enemy.dir + 2) % 4;
+
+  const candidates = dirs.filter(d => {
+    if (d === opposite) return false;
+    const nx = head.x + DX[d];
+    const ny = head.y + DY[d];
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return false;
+    if (enemy.body.some(s => s.x === nx && s.y === ny)) return false;
+    return true;
+  });
+
+  if (candidates.length === 0) {
+    const fallback = dirs.find(d => d !== opposite) || enemy.dir;
+    return fallback;
+  }
+
+  const scored = candidates.map(d => {
+    const nx = head.x + DX[d];
+    const ny = head.y + DY[d];
+    const dist = Math.abs(nx - target.x) + Math.abs(ny - target.y);
+
+    let interceptBonus = 0;
+    for (let step = 1; step <= 4; step++) {
+      const px = target.x + DX[playerDir] * step;
+      const py = target.y + DY[playerDir] * step;
+      const d2 = Math.abs(nx - px) + Math.abs(ny - py);
+      if (d2 <= 2) interceptBonus += (5 - step);
+    }
+
+    const wallPenalty =
+      (nx === 0 || nx === COLS-1 ? 3 : 0) +
+      (ny === 0 || ny === ROWS-1 ? 3 : 0);
+
+    return { d, score: -dist + interceptBonus * 2 - wallPenalty };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  if (Math.random() < 0.15) {
+    const ri = Math.floor(Math.random() * scored.length);
+    return scored[ri].d;
+  }
+
+  return scored[0].d;
+}
+
+function draw() {
+  ctx.fillStyle = '#010E01';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = '#0A1A0A';
+  ctx.lineWidth = 0.5;
+  for (let c = 0; c <= COLS; c++) {
+    ctx.beginPath(); ctx.moveTo(c*cellSize, 0); ctx.lineTo(c*cellSize, canvas.height); ctx.stroke();
+  }
+  for (let r = 0; r <= ROWS; r++) {
+    ctx.beginPath(); ctx.moveTo(0, r*cellSize); ctx.lineTo(canvas.width, r*cellSize); ctx.stroke();
+  }
+
+  const borderColor = currentMode === 'vs' ? '#CC1111' : '#00FF41';
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+  foods.forEach(f => {
+    const fx = f.x * cellSize + 2;
+    const fy = f.y * cellSize + 2;
+    const fs = cellSize - 4;
+    ctx.fillStyle = '#FF3333';
+    ctx.beginPath();
+    ctx.ellipse(fx + fs/2, fy + fs/2, fs/2, fs/2, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#FF8888';
+    ctx.beginPath();
+    ctx.arc(fx + fs*0.3, fy + fs*0.28, fs*0.12, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  if (currentMode === 'vs' && enemies) {
+    enemies.forEach(e => drawEnemy(e));
+  }
+
+  drawPlayer();
+}
+
+function drawEnemy(e) {
+  const fat = e.fat;
+  e.body.forEach((seg, i) => {
+    const pad   = Math.max(0, cellSize * (1 - fat) / 2);
+    const x     = seg.x * cellSize + pad;
+    const y     = seg.y * cellSize + pad;
+    const s     = cellSize * fat - 0;
+
+    const alpha = Math.max(0.5, 1 - i * 0.008);
+    if (i === 0) {
+      ctx.fillStyle = e.color;
+    } else {
+      const base = e.id === 0 ? [200, 30, 30] : [200, 80, 10];
+      ctx.fillStyle = `rgba(${base[0]},${base[1]},${base[2]},${alpha})`;
+    }
+
+    roundRect(ctx, x, y, s, s, 3);
+    ctx.fill();
+
+    if (i === 0) {
+      const er = Math.max(2, cellSize * 0.13);
+      const eo = cellSize * 0.27;
+      ctx.fillStyle = '#000';
+      drawEyes(ctx, x, y, s, e.dir, er, eo);
+    }
+  });
+}
+
+function drawPlayer() {
+  playerSnake.forEach((seg, i) => {
+    const x = seg.x * cellSize + 1;
+    const y = seg.y * cellSize + 1;
+    const s = cellSize - 2;
+
+    if (i === 0) {
+      ctx.fillStyle = '#00FF41';
+      roundRect(ctx, x, y, s, s, 4);
+      ctx.fill();
+
+      const er = Math.max(2, cellSize * 0.12);
+      const eo = cellSize * 0.25;
+      ctx.fillStyle = '#010E01';
+      drawEyes(ctx, x, y, s, playerDir, er, eo);
+    } else {
+      const alpha = Math.max(0.45, 1 - i * 0.013);
+      ctx.fillStyle = `rgba(0,${Math.floor(150 + (1-alpha)*60)},50,${alpha})`;
+      roundRect(ctx, x, y, s, s, 3);
+      ctx.fill();
+    }
+  });
+}
+
+function drawEyes(ctx, x, y, s, dir, er, eo) {
+  if (dir === DIR.RIGHT) {
+    ctx.beginPath(); ctx.arc(x+s-eo, y+eo, er, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+s-eo, y+s-eo, er, 0, Math.PI*2); ctx.fill();
+  } else if (dir === DIR.LEFT) {
+    ctx.beginPath(); ctx.arc(x+eo, y+eo, er, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+eo, y+s-eo, er, 0, Math.PI*2); ctx.fill();
+  } else if (dir === DIR.UP) {
+    ctx.beginPath(); ctx.arc(x+eo, y+eo, er, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+s-eo, y+eo, er, 0, Math.PI*2); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.arc(x+eo, y+s-eo, er, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+s-eo, y+s-eo, er, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+function showVsGameOver(reason) {
+  let title, titleClass, msg;
+  if (reason === 'head') {
+    title = '✧Baka no more head [*.*]';
+    titleClass = 'red pulse-red';
+    msg = 'Your head  met something tuff. Try using a helmet next time.';
+  } else if (reason === 'hunger') {
+    title = 'Died of hunger XD!●-●';
+    titleClass = 'rainbow rainbow-shift';
+    msg = ' The food in your belly was stolen by big bad snake✧. You starved out there.'
+  } else {
+    title = 'GAME OVER✧';
+    titleClass = 'rainbow';
+    msg = reason === 'self' ? 'You bit yourself. Classic.' : 'Wall. Ouch.';
+  }
+
+  overlay.innerHTML = `
+    <div class="ov-title ${titleClass}" style="font-size:clamp(1rem,4vw,2rem)">${title}</div>
+    <div class="ov-body"><span class="red">${msg}</span></div>
+    <div class="ov-score">SCORE: ${score}</div>
+    <div class="ov-body">BEST: ${highScoreVs}</div>
+    <button class="ov-btn red-btn" id="ov-btn">[ TRY AGAIN ]</button>
+  `;
+  overlay.className = '';
+  document.getElementById('ov-btn').addEventListener('click', startGame);
+}
+
+function showClassicGameOver() {
+  overlay.innerHTML = `
+    <div class="ov-title red">GAME OVER</div>
+    <div class="ov-score">SCORE: ${score}</div>
+    <div class="ov-body">BEST: <span class="gold">${highScoreClassic}</span></div>
+    ${score < 333 ? `<div class="ov-body">Reach <span class="gold">333 pts</span> for the NEO!! moment.</div>` : ''}
+    <button class="ov-btn" id="ov-btn">[ PLAY AGAIN ]</button>
+  `;
+  overlay.className = '';
+  document.getElementById('ov-btn').addEventListener('click', startGame);
+}
+
+function showNeoWin() {
+  overlay.innerHTML = `
+    <div class="ov-title gold pulse">NEO!!</div>
+    <div class="ov-body">You reached <span class="gold">333 points!</span><br>NeoPhinixMC is proud of you.<br>Can you hit <span class="gold">3333?</span></div>
+    <div class="ov-score">SCORE: ${score}</div>
+    <button class="ov-btn gold-btn" id="ov-btn">[ KEEP GOING ]</button>
+  `;
+  overlay.className = '';
+  document.getElementById('ov-btn').addEventListener('click', () => {
+    overlay.className = 'hidden';
+    gameState = 'running';
+    loopTimer = setInterval(classicTick, classicTickMs);
+  });
+}
+
+function showDoubleWin() {
+  overlay.innerHTML = `
+    <div class="ov-title rainbow" style="font-size:clamp(1.8rem,6vw,3.2rem)">NEO!! NEO!!</div>
+    <div class="ov-body"><span class="gold">DOUBLE NEO ACHIEVED!!</span><br>3333 points. Absolutely legendary.<br>You are the Neo of Snakes.</div>
+    <div class="ov-score" style="font-size:clamp(1.2rem,3.5vw,2rem)">FINAL SCORE: ${score}</div>
+    <div class="ov-body" style="color:#FF3333">GAME COMPLETE</div>
+    <button class="ov-btn gold-btn" id="ov-btn">[ PLAY AGAIN ]</button>
+  `;
+  overlay.className = '';
+  document.getElementById('ov-btn').addEventListener('click', startGame);
+}
+
+function pauseGame() {
+  if (gameState !== 'running') return;
+  clearTimers();
+  gameState = 'paused';
+  overlay.innerHTML = `
+    <div class="ov-title green">PAUSED</div>
+    <button class="ov-btn" id="ov-btn">[ RESUME ]</button>
+  `;
+  overlay.className = '';
+  document.getElementById('ov-btn').addEventListener('click', resumeGame);
+}
+
+function resumeGame() {
+  overlay.className = 'hidden';
+  gameState = 'running';
+  if (currentMode === 'classic') {
+    loopTimer = setInterval(classicTick, classicTickMs);
+  } else {
+    loopTimer    = setInterval(vsPlayerTick, VS_TICK);
+    vsEnemyTimer = setInterval(vsEnemyTick, VS_ENEMY_TICK);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  const navKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' '];
+  if (navKeys.includes(e.key)) e.preventDefault();
+
+  if (e.key === ' ') {
+    if (gameState === 'running') { pauseGame(); return; }
+    if (gameState === 'paused')  { resumeGame(); return; }
+  }
+  if (e.key === 'ArrowUp'    || e.key === 'w') setPlayerDir(DIR.UP);
+  if (e.key === 'ArrowDown'  || e.key === 's') setPlayerDir(DIR.DOWN);
+  if (e.key === 'ArrowLeft'  || e.key === 'a') setPlayerDir(DIR.LEFT);
+  if (e.key === 'ArrowRight' || e.key === 'd') setPlayerDir(DIR.RIGHT);
+});
+
+canvas.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, {passive: true});
+
+canvas.addEventListener('touchend', e => {
+  if (gameState !== 'running') return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const min = cellSize * 1.2;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (Math.abs(dx) > min) setPlayerDir(dx > 0 ? DIR.RIGHT : DIR.LEFT);
+  } else {
+    if (Math.abs(dy) > min) setPlayerDir(dy > 0 ? DIR.DOWN : DIR.UP);
+  }
+}, {passive: true});
+
+document.getElementById('btn-up').addEventListener('click',    () => setPlayerDir(DIR.UP));
+document.getElementById('btn-down').addEventListener('click',  () => setPlayerDir(DIR.DOWN));
+document.getElementById('btn-left').addEventListener('click',  () => setPlayerDir(DIR.LEFT));
+document.getElementById('btn-right').addEventListener('click', () => setPlayerDir(DIR.RIGHT));
+
+backBtn.addEventListener('click', () => {
+  clearTimers();
+  showMenu();
+});
+
+document.getElementById('card-vs').addEventListener('click',      () => launchMode('vs'));
+document.getElementById('card-classic').addEventListener('click', () => launchMode('classic'));
+document.getElementById('card-vs').addEventListener('keydown',      e => { if (e.key === 'Enter') launchMode('vs'); });
+document.getElementById('card-classic').addEventListener('keydown', e => { if (e.key === 'Enter') launchMode('classic'); });
+
+window.addEventListener('resize', () => {
+  if (gameState && gameState !== 'menu') {
+    resizeCanvas();
+    draw();
+  }
+});
+
+showMenu();
+</script>
+</body>
+</html>
